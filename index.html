@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ECOMASTA 盈利云 - Shopee/TikTok 利润计算器 2025版</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #fff;
+    color: #333;
+    margin: 0; padding: 0;
+  }
+  header {
+    background-color: #FB641B;
+    color: white;
+    padding: 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+  }
+  main {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1rem 2rem;
+    box-shadow: 0 0 12px #fcbfa7;
+    border-radius: 8px;
+  }
+  label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 600;
+  }
+  select, input[type=number], input[readonly] {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.4rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+  }
+  input[readonly] {
+    background-color: #f5f5f5;
+    color: #555;
+    cursor: default;
+  }
+  button {
+    margin-top: 1.8rem;
+    background-color: #FB641B;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.8rem 1.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+  }
+  button:hover {
+    background-color: #e55300;
+  }
+  .results {
+    margin-top: 2rem;
+    background: #fff5ef;
+    border: 1px solid #fcbfa7;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+  .flex-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .flex-row > div {
+    flex: 1;
+    min-width: 160px;
+  }
+</style>
+</head>
+<body>
+<header>ECOMASTA 盈利云 - Shopee / TikTok 利润计算器 2025版</header>
+<main>
+  <div class="flex-row">
+    <div>
+      <label for="platform">选择平台</label>
+      <select id="platform">
+        <option value="shopee">Shopee</option>
+        <option value="tiktok">TikTok</option>
+      </select>
+    </div>
+    <div>
+      <label for="transactionRateDisplay">交易手续费 (%)</label>
+      <input type="text" id="transactionRateDisplay" readonly value="2.60%" />
+    </div>
+  </div>
+
+  <div class="flex-row">
+    <div>
+      <label for="category">选择分类 (Category)</label>
+      <select id="category">
+        <option value="">--请选择分类--</option>
+      </select>
+    </div>
+    <div>
+      <label for="subcategory">选择子分类 (Sub-Category)</label>
+      <select id="subcategory" disabled>
+        <option value="">--请选择子分类--</option>
+      </select>
+    </div>
+    <div>
+      <label for="commissionRateDisplay">类别佣金 (%)</label>
+      <input type="text" id="commissionRateDisplay" readonly value="-" />
+    </div>
+  </div>
+
+  <label for="productPrice">卖价（RM）</label>
+  <input type="number" id="productPrice" placeholder="例如：18.99" />
+
+  <label for="cost">成本价（RM）</label>
+  <input type="number" id="cost" placeholder="例如：13" />
+
+  <label for="voucher">优惠券折扣（RM）</label>
+  <input type="number" id="voucher" value="0" />
+
+  <label for="affiliate">联属佣金 (%)</label>
+  <input type="number" id="affiliate" value="0" />
+
+  <label for="serviceFee">服务费（RM）</label>
+  <input type="number" id="serviceFee" value="0" />
+
+  <button onclick="calculateProfit()">计算利润</button>
+
+  <div class="results" id="results"></div>
+</main>
+
+<script>
+  const categoryData = {
+    "手机数码": [
+      { name: "智能手机", commission: 0.12 },
+      { name: "手机配件", commission: 0.12 },
+      { name: "智能穿戴", commission: 0.12 }
+    ],
+    "家用电器": [
+      { name: "厨房电器", commission: 0.12 },
+      { name: "生活电器", commission: 0.12 }
+    ],
+    "服饰": [
+      { name: "男装", commission: 0.15 },
+      { name: "女装", commission: 0.15 },
+      { name: "童装", commission: 0.15 }
+    ],
+    "美妆个护": [
+      { name: "护肤", commission: 0.15 },
+      { name: "彩妆", commission: 0.15 }
+    ],
+    "运动户外": [
+      { name: "运动服饰", commission: 0.12 },
+      { name: "运动器材", commission: 0.12 }
+    ],
+    "家居生活": [
+      { name: "家纺", commission: 0.12 },
+      { name: "家具", commission: 0.12 }
+    ]
+  };
+
+  const platformSelect = document.getElementById("platform");
+  const transactionRateDisplay = document.getElementById("transactionRateDisplay");
+  const categorySelect = document.getElementById("category");
+  const subcategorySelect = document.getElementById("subcategory");
+  const commissionRateDisplay = document.getElementById("commissionRateDisplay");
+
+  // 初始化分类
+  function initCategories() {
+    for (const cat in categoryData) {
+      const option = document.createElement("option");
+      option.value = cat;
+      option.textContent = cat;
+      categorySelect.appendChild(option);
+    }
+  }
+
+  // 更新交易手续费显示
+  function updateTransactionRate() {
+    const platform = platformSelect.value;
+    const rate = platform === "shopee" ? 2.6 : 2.0;
+    transactionRateDisplay.value = rate.toFixed(2) + "%";
+  }
+
+  // 更新子分类及佣金显示
+  categorySelect.addEventListener("change", () => {
+    const selectedCat = categorySelect.value;
+    subcategorySelect.innerHTML = '<option value="">--请选择子分类--</option>';
+    commissionRateDisplay.value = "-";
+    if (selectedCat && categoryData[selectedCat]) {
+      categoryData[selectedCat].forEach(subcat => {
+        const option = document.createElement("option");
+        option.value = subcat.name + "|" + subcat.commission;
+        option.textContent = subcat.name;
+        subcategorySelect.appendChild(option);
+      });
+      subcategorySelect.disabled = false;
+    } else {
+      subcategorySelect.disabled = true;
+    }
+  });
+
+  subcategorySelect.addEventListener("change", () => {
+    const val = subcategorySelect.value;
+    if (val) {
+      const commission = parseFloat(val.split("|")[1]);
+      commissionRateDisplay.value = (commission * 100).toFixed(2) + "%";
+    } else {
+      commissionRateDisplay.value = "-";
+    }
+  });
+
+  platformSelect.addEventListener("change", updateTransactionRate);
+
+  function calculateProfit() {
+    const platform = platformSelect.value;
+    const price = parseFloat(document.getElementById("productPrice").value) || 0;
+    const cost = parseFloat(document.getElementById("cost").value) || 0;
+    const voucher = parseFloat(document.getElementById("voucher").value) || 0;
+    const affiliate = parseFloat(document.getElementById("affiliate").value) || 0;
+    const serviceFee = parseFloat(document.getElementById("serviceFee").value) || 0;
+
+    const transactionRate = platform === "shopee" ? 0.026 : 0.02;
+
+    const subcatValue = subcategorySelect.value;
+    let commissionRate = 0;
+    if (subcatValue) {
+      commissionRate = parseFloat(subcatValue.split("|")[1]);
+    }
+
+    const commissionFee = price * commissionRate;
+    const transactionFee = price * transactionRate;
+    const affiliateFee = price * (affiliate / 100);
+
+    // 利润计算：
+    // 利润 = 售价 - 成本 - 优惠券 - 服务费 - 类别佣金 - 交易手续费 - 联属佣金
+    const profit = price - cost - voucher - serviceFee - commissionFee - transactionFee - affiliateFee;
+
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = `
+      <p><strong>利润:</strong> RM ${profit.toFixed(2)}</p>
+      <p>类别佣金: RM ${commissionFee.toFixed(2)} (${(commissionRate*100).toFixed(2)}%)</p>
+      <p>交易手续费: RM ${transactionFee.toFixed(2)} (${(transactionRate*100).toFixed(2)}%)</p>
+      <p>联属佣金: RM ${affiliateFee.toFixed(2)} (${affiliate.toFixed(2)}%)</p>
+      <p>优惠券折扣: RM ${voucher.toFixed(2)}</p>
+      <p>服务费: RM ${serviceFee.toFixed(2)}</p>
+    `;
+  }
+
+  // 初始化
+  initCategories();
+  updateTransactionRate();
+</script>
+</body>
+</html>
