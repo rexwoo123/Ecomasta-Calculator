@@ -184,7 +184,7 @@
   // 更新交易手续费显示
   function updateTransactionRate() {
     const platform = platformSelect.value;
-    const rate = platform === "shopee" ? 2.6 : 2.0;
+    const rate = platform === "shopee" ? 3.78 : 3.78;
     transactionRateDisplay.value = rate.toFixed(2) + "%";
   }
 
@@ -226,7 +226,7 @@
     const affiliate = parseFloat(document.getElementById("affiliate").value) || 0;
     const serviceFee = parseFloat(document.getElementById("serviceFee").value) || 0;
 
-    const transactionRate = platform === "shopee" ? 0.026 : 0.02;
+    const transactionRate = platform === "shopee" ? 0.0378 : 0.0378;
 
     const subcatValue = subcategorySelect.value;
     let commissionRate = 0;
